@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.pytype/
+.ipynb_checkpoints/
+coverage*
+htmlcov/
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+
+# Photo folders (keep structure, ignore content)
+photo/**
+!photo/**/
+!photo/**/.gitkeep
