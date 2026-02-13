@@ -1,0 +1,36 @@
+# --- Security ---
+pin: "1234"
+
+# --- Printer ---
+printer_name: "Canon SELPHY CP1500"
+
+# --- Paths ---
+paths:
+  base: "photo"
+  collage_uploaded: "photo/collage/uploaded"
+  collage_processed: "photo/collage/processed"
+  correction_uploaded: "photo/correction/uploaded"
+  correction_processed: "photo/correction/processed"
+  printer_queue: "photo/printer/queue"
+  printer_printed: "photo/printer/printed"
+
+# --- ICC Profile ---
+color:
+  icc_profile: "Canon_CP1500.icc"
+  green_factor: 0.97
+
+# --- Collage ---
+collage:
+  width: 1847
+  height: 1247
+  dpi: 300
+  border_outer_mm: 6
+  border_center_mm: 4
+  corr_top_mm: -0.5
+  corr_bottom_mm: -0.5
+  corr_left_mm: 1.5
+  corr_right_mm: 1
+
+# --- Cloudflare Tunnel ---
+# Set in .env via CLOUDFLARE_TUNNEL_HOSTNAME
+cloudflare_hostname: ""

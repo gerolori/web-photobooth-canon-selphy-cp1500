@@ -6,30 +6,13 @@ instax_collage_auto.py
 - Fixed resolution 1847x1247 px
 - Outer border 2mm, center border 4mm
 - Auto-rotate landscape photos
-- ICC always applied
-- Green correction (%)
 - Adjustable offsets for calibration (top, bottom, left, right)
 """
 
 import os
 import argparse
-from PIL import Image, ImageCms, ImageFilter
-
-# === CONFIG ===
-COLLAGE_W = 1847
-COLLAGE_H = 1247
-DPI = 300
-
-BORDER_OUTER_MM = 6
-BORDER_CENTER_MM = 4
-# GREEN_FACTOR = 0.97
-# ICC_PATH = "Canon_CP1500.icc"
-
-# === Adjustable corrections for margin calibration ===
-CORR_TOP_MM = -0.5
-CORR_BOTTOM_MM = -0.5
-CORR_LEFT_MM = 1.5
-CORR_RIGHT_MM = 1
+from config import *
+from PIL import Image, ImageCms
 
 try:
     RESAMPLE_LANCZOS = Image.Resampling.LANCZOS
@@ -38,11 +21,6 @@ except AttributeError:
 
 def mm_to_px(mm):
     return int(round((mm / 25.4) * DPI))
-
-# def reduce_green(im: Image.Image, factor=GREEN_FACTOR) -> Image.Image:
-#     r, g, b = im.split()
-#     g = g.point(lambda i: i * factor)
-#     return Image.merge("RGB", (r, g, b))
 
 def build_collage(imgs, output_path):
     # Convert borders and corrections to pixels
@@ -74,9 +52,6 @@ def build_collage(imgs, output_path):
             raise FileNotFoundError(f"File not found: {path}")
         im = Image.open(path).convert("RGB")
 
-        # Green reduction
-        # im = reduce_green(im, GREEN_FACTOR)
-
         w, h = im.size
 
         # Rotate landscape
@@ -98,7 +73,6 @@ def build_collage(imgs, output_path):
             new_h = int(new_w / ratio)
 
         resized = im.resize((new_w, new_h), RESAMPLE_LANCZOS)
-        resized = resized.filter(ImageFilter.UnsharpMask(radius=1.5, percent=120, threshold=3))
 
         # Center crop
         left = (new_w - cell_w) // 2
@@ -108,29 +82,7 @@ def build_collage(imgs, output_path):
         # Paste into collage
         collage.paste(cropped, positions[idx])
 
-    # # Apply ICC
-    # icc_bytes = None
-    # if os.path.exists(ICC_PATH):
-    #     try:
-    #         srgb = ImageCms.createProfile("sRGB")
-    #         printer = ImageCms.getOpenProfile(ICC_PATH)
-    #         transform = ImageCms.buildTransformFromOpenProfiles(srgb, printer, "RGB", "RGB")
-    #         collage = ImageCms.applyTransform(collage, transform)
-    #         with open(ICC_PATH, "rb") as f:
-    #             icc_bytes = f.read()
-    #         print(f"ICC profile applied: {ICC_PATH}")
-    #     except Exception as e:
-    #         print(f"ICC not applied: {e}")
-    # else:
-    #     print(f"ICC profile not found: {ICC_PATH}")
-
-    collage.save(
-    output_path,
-    "JPEG",
-    quality=100,
-    subsampling=0,
-    dpi=(DPI, DPI),
-    )
+    collage.save(output_path, "JPEG", quality=100, dpi=(DPI, DPI))
     print(f"Collage saved as {output_path} ({COLLAGE_W}x{COLLAGE_H} px)")
 
 if __name__ == "__main__":

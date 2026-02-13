@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="text-2xl font-semibold text-center mb-8">🎛️ System Status</h2>
+
+<section class="mb-10">
+  <h3 class="text-xl font-semibold mb-3">🧩 Processing</h3>
+  <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+    {% for img in correction_uploaded %}
+    <div class="rounded-xl overflow-hidden shadow">
+      <img src="{{ url_for('static', filename='correction/uploaded/' + img) }}" class="w-full object-cover">
+      <p class="text-center text-sm bg-white py-1">{{ img }}</p>
+    </div>
+    {% else %}
+    <p class="col-span-full text-center text-gray-500">No photos waiting</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section>
+  <h3 class="text-xl font-semibold mb-3">🖨️ Queued for printing</h3>
+  <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+    {% for img in printer_queue %}
+    <div class="rounded-xl overflow-hidden shadow">
+      <img src="{{ url_for('static', filename='printer/queue/' + img) }}" class="w-full object-cover">
+      <p class="text-center text-sm bg-white py-1">{{ img }}</p>
+    </div>
+    {% else %}
+    <p class="col-span-full text-center text-gray-500">No prints in queue</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

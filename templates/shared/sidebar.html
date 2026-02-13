@@ -1,0 +1,17 @@
+<nav class="flex gap-3">
+  <a
+    href="/"
+    class="px-4 py-2 rounded-full text-white font-semibold shadow transition"
+    :class="window.location.pathname==='/' ? 'bg-pink-600' : 'bg-pink-400 hover:bg-pink-500'"
+  >Collage</a>
+  <a
+    href="/postcards"
+    class="px-4 py-2 rounded-full text-white font-semibold shadow transition"
+    :class="window.location.pathname.includes('postcards') ? 'bg-blue-600' : 'bg-blue-400 hover:bg-blue-500'"
+  >Postcards</a>
+  <a
+    href="/correction"
+    class="px-4 py-2 rounded-full text-white font-semibold shadow transition"
+    :class="window.location.pathname.includes('correction') ? 'bg-green-600' : 'bg-green-400 hover:bg-green-500'"
+  >Status</a>
+</nav>

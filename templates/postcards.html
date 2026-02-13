@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div x-data="uploader" x-init="uploadType='postcard'" class="text-center space-y-6">
+  <h2 class="text-2xl font-semibold">Print a Postcard 💌</h2>
+    <p class="text-gray-700">Upload one or more images to print individually.</p>
+
+  <input
+    type="file"
+    accept="image/*"
+    multiple
+    x-ref="fileInput"
+    @change="handleFileChange($event)"
+    class="hidden"
+  />
+
+  <button
+    @click="$refs.fileInput.click()"
+    class="bg-blue-600 text-white px-8 py-4 rounded-full font-semibold shadow-md hover:bg-blue-700 transition-all"
+  >
+      📸 Choose images
+  </button>
+
+  <template x-if="uploading">
+    <div class="mt-8 w-full max-w-sm mx-auto">
+      <div class="bg-gray-200 h-3 rounded-full overflow-hidden">
+        <div
+          class="bg-green-500 h-3 transition-all"
+          :style="`width: ${progress}%`"
+        ></div>
+      </div>
+        <p class="mt-2 text-sm text-gray-600">Uploading... <span x-text="progress + '%'"></span></p>
+    </div>
+  </template>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ title or "PhotoBooth Station" }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs" defer></script>
+    <script src="/upload.js" defer></script>
+
+    <style>
+      body {
+        background: linear-gradient(135deg, #ffafbd, #ffc3a0);
+        min-height: 100vh;
+      }
+      .card {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+      }
+      button:active {
+        transform: scale(0.97);
+      }
+    </style>
+  </head>
+
+  <body class="flex flex-col items-center justify-center p-6 text-gray-800">
+    <header class="w-full max-w-3xl flex justify-between items-center mb-8">
+      <h1 class="text-3xl font-bold tracking-tight drop-shadow-md">
+        📸 Photobooth
+      </h1>
+      {% include 'sidebar.html' %}
+    </header>
+
+    <main class="card w-full max-w-3xl rounded-3xl shadow-xl p-8">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="text-sm text-gray-600 mt-6 opacity-70">
+      Canon Selphy Station • {{ datetime.now().strftime('%d %b %Y') }}
+    </footer>
+  </body>
+</html>

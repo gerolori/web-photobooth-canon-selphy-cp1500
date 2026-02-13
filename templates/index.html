@@ -1,289 +1,223 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Photo Booth Print</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/heic-to@1.3.0/dist/iife/heic-to.js"></script>
-
-<link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png">
-<link rel="manifest" href="/static/favicon/site.webmanifest">
-<link rel="mask-icon" href="/static/favicon/safari-pinned-tab.svg" color="#5bbad5">
-<link rel="shortcut icon" href="/static/favicon/favicon.ico">
-<meta name="msapplication-TileColor" content="#da532c">
-<meta name="msapplication-config" content="/static/favicon/browserconfig.xml">
-<meta name="theme-color" content="#ffffff">
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Photo Booth Printer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: linear-gradient(180deg,#f7f7fb,#fff); }
+  </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col items-center p-6">
-<header class="text-center py-4">
-  <div class="inline-flex bg-gray-200 rounded-full overflow-hidden text-sm mb-4">
-    <a href="/" class="px-3 py-1 font-medium transition 
-       {{ 'bg-green-600 text-white' if current_path == '/' else 'text-gray-600 hover:bg-gray-300' }}">
-       Collage
-    </a>
-    <a href="/postcard" class="px-3 py-1 font-medium transition 
-       {{ 'bg-blue-600 text-white' if current_path == '/postcard' else 'text-gray-600 hover:bg-gray-300' }}">
-       Postcards
-    </a>
+<body class="min-h-screen flex items-center justify-center p-6">
+  <div class="w-full max-w-xl">
+    <header class="mb-6 text-center">
+      <h1 class="text-2xl font-bold">📸 Upload your photos!</h1>
+    </header>
+
+    <!-- Counters -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-white p-4 rounded-lg shadow text-center">
+        <div class="text-sm text-gray-500">Next print in</div>
+        <div class="text-2xl font-bold" id="next-print">--</div>
+        <div class="text-xs text-gray-400">photos</div>
+      </div>
+      <div class="bg-white p-4 rounded-lg shadow text-center">
+        <div class="text-sm text-gray-500">Collages queued</div>
+        <div class="text-2xl font-bold" id="to-print">--</div>
+      </div>
+      <div class="bg-white p-4 rounded-lg shadow text-center">
+        <div class="text-sm text-gray-500">Total prints</div>
+        <div class="text-2xl font-bold" id="total-prints">--</div>
+      </div>
+    </div>
+
+    <!-- Upload card -->
+    <form id="upload-form" class="bg-white p-5 rounded-xl shadow space-y-4" enctype="multipart/form-data" method="post" action="/upload">
+      <label class="block border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-green-500">
+        <input id="file-input" type="file" name="photo" accept="image/*" multiple class="hidden" />
+        <div class="text-gray-600">Drag or click to select images</div>
+      </label>
+
+      <div id="preview" class="grid gap-4 grid-cols-2"></div>
+
+      <div class="flex justify-end gap-3">
+        <button id="clear-btn" type="button" class="px-4 py-2 rounded bg-gray-200">Clear</button>
+        <button id="submit-btn" type="submit" class="px-4 py-2 rounded bg-green-600 text-white">Upload</button>
+      </div>
+    </form>
   </div>
 
-  <h1 class="text-3xl font-bold text-gray-800">Upload your photos!</h1>
-</header>
-
-
-<main class="w-full max-w-md space-y-6">
-
-  <div id="counters" class="text-xs sm:text-sm text-gray-600 flex justify-center flex-wrap gap-3 mt-3 mb-4">
-  <span>🕓 Queued: <strong id="to-print">0</strong></span>
-  <span>🖨️ Printed: <strong id="total-prints">0</strong></span>
-  </div>
-
-  <!-- Counters -->
-  <div class="space-y-3">
-    <div class="flex justify-between items-baseline bg-white shadow rounded-lg p-4">
-      <span class="text-gray-700 font-medium">Next collage in:</span>
-      <span class="flex items-center gap-1 text-lg font-bold text-gray-800">
-        <span id="next-print">0</span><span class="text-sm text-gray-600">photos</span>
-      </span>
+  <!-- modal -->
+  <div id="dialog-overlay" class="fixed inset-0 bg-black bg-opacity-30 hidden items-center justify-center">
+    <div class="bg-white rounded-lg p-6 w-80 text-center">
+      <p id="dialog-message" class="mb-3 text-gray-800"></p>
+      <input id="pin-input" type="password" placeholder="Enter PIN" class="border rounded w-3/4 py-1 mx-auto mb-3 hidden" />
+      <div id="progress-wrap" class="w-full bg-gray-200 h-3 rounded overflow-hidden hidden mb-3">
+        <div id="progress-bar" class="h-3 bg-green-600 w-0"></div>
+      </div>
+      <div class="flex justify-center gap-3">
+        <button id="dialog-ok" class="px-4 py-2 bg-green-600 text-white rounded">OK</button>
+        <button id="dialog-cancel" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
+      </div>
     </div>
   </div>
 
-  <!-- Upload form -->
-  <form id="upload-form" action="/upload_collage" method="post" enctype="multipart/form-data"
-    class="flex flex-col items-center bg-white shadow-lg rounded-xl p-5 space-y-4 relative">
-    <label class="relative border-2 border-dashed border-gray-300 rounded-xl w-full flex flex-col items-center justify-center py-12 cursor-pointer hover:border-green-500 hover:bg-green-50 transition">
-      <input type="file" name="photo" accept=".heic,.heif,image/*" multiple
-       class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-      <span class="text-gray-600 text-center">Drag photos here or click to upload</span>
-    </label>
-    <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Print</button>
-  </form>
-
-  <!-- Previews -->
-  <div id="preview" class="grid gap-4 w-full grid-cols-2"></div>
-</main>
-
-<!-- Notification modal -->
-<div id="modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center">
-  <div class="bg-white rounded-xl shadow-lg p-6 text-center w-80">
-    <h2 class="text-lg font-semibold text-gray-800 mb-2" id="modal-title">Notification</h2>
-    <p class="text-gray-600 mb-4" id="modal-message"></p>
-    <button onclick="closeModal()"
-      class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">OK</button>
-  </div>
-</div>
-
-<!-- Loading modal -->
-<div id="loading-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center">
-  <div class="bg-white rounded-xl shadow-lg p-6 text-center w-60">
-    <div class="animate-spin border-4 border-green-500 border-t-transparent rounded-full w-12 h-12 mx-auto mb-4"></div>
-    <p class="text-gray-700">Uploading...</p>
-  </div>
-</div>
-
-<!-- HEIC conversion modal -->
-<div id="heic-loading-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center">
-  <div class="bg-white rounded-xl shadow-lg p-6 text-center w-60">
-    <div class="animate-spin border-4 border-green-500 border-t-transparent rounded-full w-12 h-12 mx-auto mb-4"></div>
-    <p class="text-gray-700">Converting iPhone photos...</p>
-  </div>
-</div>
-
-
-
 <script>
-const fileInput = document.querySelector('input[name="photo"]');
-const previewContainer = document.getElementById("preview");
-const modal = document.getElementById("modal");
-const loadingModal = document.getElementById("loading-modal");
-let fileList = [];
+/* Config */
+const HARD_PIN = "6730";
+const fileInput = document.getElementById('file-input');
+const preview = document.getElementById('preview');
+const form = document.getElementById('upload-form');
+const dialog = document.getElementById('dialog-overlay');
+const dialogMsg = document.getElementById('dialog-message');
+const dialogOk = document.getElementById('dialog-ok');
+const dialogCancel = document.getElementById('dialog-cancel');
+const pinInput = document.getElementById('pin-input');
+const progressWrap = document.getElementById('progress-wrap');
+const progressBar = document.getElementById('progress-bar');
+const clearBtn = document.getElementById('clear-btn');
 
-// Convert a Blob to base64 string (for potential preview)
-function extractBase64FromBlob(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(String(reader.result));
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
+let files = []; // {file:File, qty: number}
+let awaitingConfirmCallback = null;
+
+/* helpers */
+function showModal(msg, { showPin=false, onlyOk=false, showProgress=false } = {}, callback=null) {
+  dialogMsg.textContent = msg;
+  pinInput.classList.toggle('hidden', !showPin);
+  pinInput.value = '';
+  progressWrap.style.display = showProgress ? 'block' : 'none';
+  progressBar.style.width = '0%';
+  dialog.classList.remove('hidden');
+  dialogOk.disabled = false;
+  dialogCancel.style.display = onlyOk ? 'none' : 'inline-block';
+  awaitingConfirmCallback = callback;
 }
 
-// Handle previews + copy count with heic-to
-fileInput.addEventListener("change", async () => {
-  const newFiles = Array.from(fileInput.files);
-
-  for (const file of newFiles) {
-    let processedFiles = [file];
-
-    const heicExtensions = [".heic", ".heif"];
-    const isHeicFile = heicExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
-
-    if (file.type === "image/heic" || isHeicFile) {
-      try {
-        showHeicLoading();
-        const isHeic = await HeicTo.isHeic(file);
-        if (isHeic) {
-          let jpgBlob = await HeicTo({
-            blob: file,
-            type: "image/jpeg",
-            quality: 1
-          });
-
-          if (Array.isArray(jpgBlob)) jpgBlob = jpgBlob[0];
-
-          processedFiles = [new File([jpgBlob], file.name.replace(/\.(heic|HEIC)$/, ".jpg"), { type: "image/jpeg" })];
-        }
-      } catch (err) {
-        console.error("Error converting HEIC:", err);
-        continue;
-      } finally {
-        hideHeicLoading();
-      }
-    }
-
-    processedFiles.forEach(f => fileList.push({ file: f, copies: 1 }));
+dialogOk.addEventListener('click', () => {
+  if (pinInput && !pinInput.classList.contains('hidden')) {
+    if (pinInput.value !== HARD_PIN) { alert('Wrong PIN'); return; }
   }
-
-  updatePreview();
-  fileInput.value = "";
+  dialog.classList.add('hidden');
+  if (awaitingConfirmCallback) awaitingConfirmCallback(true);
+});
+dialogCancel.addEventListener('click', () => {
+  dialog.classList.add('hidden');
+  if (awaitingConfirmCallback) awaitingConfirmCallback(false);
 });
 
+/* file selection and preview */
+fileInput.addEventListener('change', e => {
+  const chosen = Array.from(e.target.files);
+  for (const f of chosen) files.push({ file: f, qty: 1 });
+  updatePreview();
+  fileInput.value = '';
+});
+
+clearBtn.addEventListener('click', () => { files = []; updatePreview(); });
 
 function updatePreview() {
-  previewContainer.innerHTML = "";
-  fileList.forEach((item, index) => {
-    const card = document.createElement("div");
-    card.className = "relative bg-white shadow-md rounded-lg p-2 flex flex-col items-center";
+  preview.innerHTML = '';
+  if (files.length === 0) return;
+  if (files.length === 1) preview.classList.remove('grid-cols-2'); else preview.classList.add('grid-cols-2');
 
-    const img = document.createElement("img");
-    img.src = URL.createObjectURL(item.file);
-    img.className = "rounded-md mb-2 w-full object-cover";
+  files.forEach((entry, idx) => {
+    const card = document.createElement('div');
+    card.className = "relative bg-white rounded-lg p-2 shadow";
 
-    const deleteBtn = document.createElement("button");
-    deleteBtn.type = "button";
-    deleteBtn.className = "absolute top-2 right-2";
-    deleteBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" class="w-6 h-6 text-red-500 hover:text-red-700"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
-    deleteBtn.addEventListener("click", () => {
-      fileList.splice(index, 1);
-      updatePreview();
-    });
+    const img = document.createElement('img');
+    img.className = "w-full h-40 object-cover rounded";
+    const reader = new FileReader();
+    reader.onload = ev => img.src = ev.target.result;
+    reader.readAsDataURL(entry.file);
 
-    const copiesContainer = document.createElement("div");
-    copiesContainer.className = "flex items-center gap-2 mt-1";
+    const controls = document.createElement('div');
+    controls.className = "flex items-center justify-between mt-2";
 
-    const minusBtn = document.createElement("button");
-    minusBtn.type = "button";
-    minusBtn.className = "px-2 py-1 bg-gray-200 rounded hover:bg-gray-300";
-    minusBtn.textContent = "-";
-    minusBtn.addEventListener("click", () => {
-      if (item.copies > 1) {
-        item.copies--;
-        copiesInput.value = item.copies;
-      }
-    });
+    const qtyWrap = document.createElement('div');
+    qtyWrap.className = "flex items-center gap-2";
+    const minus = document.createElement('button'); minus.type='button'; minus.textContent='−';
+    const plus = document.createElement('button'); plus.type='button'; plus.textContent='+';
+    const qty = document.createElement('input');
+    qty.type='number'; qty.min=1; qty.max=35; qty.value=entry.qty; qty.className='w-14 text-center border rounded';
+    minus.className = plus.className = 'px-2 py-1 bg-gray-200 rounded';
+    minus.addEventListener('click', ()=> { entry.qty = Math.max(1, entry.qty-1); qty.value = entry.qty; });
+    plus.addEventListener('click', ()=> { entry.qty = Math.min(35, entry.qty+1); qty.value = entry.qty; });
+    qty.addEventListener('input', ()=> { let v=parseInt(qty.value)||1; v=Math.max(1,Math.min(35,v)); entry.qty=v; qty.value=v; });
 
-    const copiesInput = document.createElement("input");
-    copiesInput.type = "number";
-    copiesInput.min = 1;
-    copiesInput.max = 35;
-    copiesInput.value = item.copies;
-    copiesInput.className = "border rounded w-16 text-center";
-    copiesInput.addEventListener("change", () => {
-      let val = parseInt(copiesInput.value);
-      if (isNaN(val) || val < 1) val = 1;
-      if (val > 35) val = 35;
-      item.copies = val;
-      copiesInput.value = val;
-    });
+    qtyWrap.append(minus, qty, plus);
 
-    const plusBtn = document.createElement("button");
-    plusBtn.type = "button";
-    plusBtn.className = "px-2 py-1 bg-gray-200 rounded hover:bg-gray-300";
-    plusBtn.textContent = "+";
-    plusBtn.addEventListener("click", () => {
-      if (item.copies < 35) {
-        item.copies++;
-        copiesInput.value = item.copies;
-      }
-    });
+    const del = document.createElement('button');
+    del.type='button';
+    del.innerHTML = `<svg viewBox="0 0 24 24" class="w-6 h-6 text-red-500"><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/><line x1="6" y1="18" x2="18" y2="6" stroke="currentColor" stroke-width="2"/></svg>`;
+    del.className = 'p-1';
+    del.addEventListener('click', ()=> { files.splice(idx,1); updatePreview(); });
 
-    copiesContainer.append(minusBtn, copiesInput, plusBtn);
-    card.append(img, copiesContainer, deleteBtn);
-    previewContainer.appendChild(card);
+    controls.append(qtyWrap, del);
+
+    card.append(img, controls);
+    preview.appendChild(card);
   });
 }
 
-function showModal(title, message) {
-  document.getElementById("modal-title").innerText = title;
-  document.getElementById("modal-message").innerText = message;
-  modal.classList.remove("hidden");
-}
-function closeModal() { modal.classList.add("hidden"); }
-function showLoading() { loadingModal.classList.remove("hidden"); }
-function hideLoading() { loadingModal.classList.add("hidden"); }
-function showHeicLoading() { document.getElementById("heic-loading-modal").classList.remove("hidden"); }
-function hideHeicLoading() { document.getElementById("heic-loading-modal").classList.add("hidden"); }
-
-
-document.getElementById("upload-form").addEventListener("submit", async (e) => {
+/* submit handling */
+form.addEventListener('submit', e => {
   e.preventDefault();
-  if (fileList.length === 0) {
-    showModal("Warning", "No photos selected!");
-    return;
-  }
+  if (files.length === 0) { showModal('⚠️ No photos selected.', { onlyOk:true }); return; }
 
-  let requirePin = fileList.some(item => item.copies > 10);
-  let pin = "";
-  if (requirePin) {
-    pin = prompt("Enter PIN for copies >10:");
-    if (pin !== "6730") {
-      showModal("PIN Error", "❌ Wrong PIN!");
-      return;
-    }
-  }
+  const over10 = files.some(f => f.qty > 10);
+  const doUpload = () => {
+    const fd = new FormData();
+    // append copies[] for each file (same order)
+    files.forEach(entry => fd.append('copies[]', entry.qty));
+    // append files
+    files.forEach(entry => fd.append('photo', entry.file));
 
-  const formData = new FormData();
-  fileList.forEach(item => {
-    for (let i=0; i<item.copies; i++) {
-      formData.append("photo", item.file, item.file.name);
-    }
-  });
-  if (requirePin) formData.append("pin", pin);
+    showModal('📤 Uploading...', { showProgress:true, onlyOk:true });
 
-  showLoading();
-  try {
-    const res = await fetch("/upload_collage", { method: "POST", body: formData });
-    if (res.ok) {
-      showModal("Done!", "✅ Photos uploaded successfully!");
-      fileList = [];
-      updatePreview();
-    } else {
-      const data = await res.json().catch(()=>({error:"Upload error"}));
-      showModal("Error", "❌ " + (data.error || "Upload error"));
-    }
-  } catch {
-    showModal("Error", "❌ Server connection error.");
-  } finally {
-    hideLoading();
-  }
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST','/upload',true);
+    xhr.upload.onprogress = ev => {
+      if (ev.lengthComputable) {
+        const pct = Math.round(ev.loaded/ev.total*100);
+        progressBar.style.width = pct + '%';
+      }
+    };
+    xhr.onload = () => {
+      dialog.classList.add('hidden');
+      if (xhr.status === 200) {
+        showModal('✅ Photos uploaded successfully!', { onlyOk:true }, ()=>{
+          files = []; updatePreview();
+        });
+      } else {
+        showModal('❌ Upload failed.', { onlyOk:true });
+      }
+    };
+    xhr.onerror = () => {
+      dialog.classList.add('hidden');
+      showModal('❌ Upload failed.', { onlyOk:true });
+    };
+    xhr.send(fd);
+  };
+
+  if (over10) {
+    showModal('⚠️ You entered >10 copies for an image. Enter PIN to continue.', { showPin:true }, ok => { if (ok) doUpload(); });
+  } else doUpload();
 });
 
-// Counters
+/* counters */
 async function refreshCounters() {
   try {
-    const res = await fetch("/counters");
+    const res = await fetch('/counters');
+    if (!res.ok) return;
     const data = await res.json();
-    document.getElementById("next-print").innerText = data.upload_count ?? 0;
-    document.getElementById("to-print").innerText = data.processed_count ?? 0;
-    document.getElementById("total-prints").innerText = data.printed_count ?? 0;
-  } catch {}
+    document.getElementById('next-print').innerText = data.upload_count;
+    document.getElementById('to-print').innerText = data.to_print_count;
+    document.getElementById('total-prints').innerText = data.photos_printed;
+  } catch (e) { console.error(e); }
 }
 refreshCounters();
-setInterval(refreshCounters, 2000);
+setInterval(refreshCounters, 5000);
 </script>
 </body>
 </html>
