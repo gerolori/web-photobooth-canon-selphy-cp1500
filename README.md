@@ -1,4 +1,4 @@
-# Instax/Canon CP1500 Photo Booth
+# Canon CP1500 Photo Booth
 
 Local photo booth app for Canon SELPHY CP1500 only. It provides a small Flask web UI for uploading photos, builds 2x2 collages, applies a color tweak and ICC profile, queues files for printing, and runs a FIFO print worker.
 
