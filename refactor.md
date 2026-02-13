@@ -1,13 +1,13 @@
-Perfetto, possiamo strutturare lo stack in modo modulare, così:
+Great, we can structure the stack in a modular way like this:
 
-* **Color-Corrector**: applica ICC e correzione verde sulle immagini.
-* **Collage-Builder**: genera collage 2x2 come già avevi, con impostazioni di bordo e rotazione.
-* **Printer-Service**: riceve immagini (singole o collage) via upload e le invia alla mail della stampante (mail-to-print).
-* **Frontend**: semplice interfaccia web per upload e scelta modalità (singola immagine o collage).
+* **Color-Corrector**: applies ICC and green correction to images.
+* **Collage-Builder**: generates 2x2 collages as before, with border and rotation settings.
+* **Printer-Service**: receives images (single or collages) via upload and sends them to the printer email (mail-to-print).
+* **Frontend**: simple web UI for uploads and mode selection (single image or collage).
 
 ---
 
-## 1️⃣ Struttura progetto
+## 1. Project structure
 
 ```
 photo-printer/
@@ -33,18 +33,18 @@ photo-printer/
 
 ---
 
-## 2️⃣ Funzionamento generale
+## 2. Overall flow
 
-1. L’utente carica foto tramite **frontend**.
-2. L’utente sceglie **modalità singola foto** o **collage 2x2**.
-3. Se singola foto → **Color-Corrector** → invio a **Printer-Service**.
-4. Se collage → **Color-Corrector** per ogni foto → **Collage-Builder** → output → **Printer-Service**.
+1. The user uploads photos via the **frontend**.
+2. The user chooses **single photo mode** or **2x2 collage**.
+3. If single photo -> **Color-Corrector** -> send to **Printer-Service**.
+4. If collage -> **Color-Corrector** for each photo -> **Collage-Builder** -> output -> **Printer-Service**.
 
-Ogni container comunica tramite **REST API** interna o **cartella condivisa montata come volume**.
+Each container communicates through an internal **REST API** or a **shared folder mounted as a volume**.
 
 ---
 
-### 3️⃣ Volumi condivisi
+### 3. Shared volumes
 
 ```yaml
 volumes:
@@ -53,13 +53,13 @@ volumes:
   collage:
 ```
 
-* `uploads`: immagini caricate dall’utente.
-* `tmp`: immagini temporanee processate dal color-corrector.
-* `collage`: output collage pronto per stampa.
+* `uploads`: images uploaded by the user.
+* `tmp`: temporary images processed by the color-corrector.
+* `collage`: collage output ready for printing.
 
 ---
 
-## 4️⃣ docker-compose.yml base
+## 4. Base docker-compose.yml
 
 ```yaml
 version: "3.9"
@@ -115,7 +115,7 @@ volumes:
 
 ---
 
-## 5️⃣ Frontend (`frontend/app.py`) esempio minimale
+## 5. Frontend (`frontend/app.py`) minimal example
 
 ```python
 from flask import Flask, request, render_template, redirect
@@ -133,14 +133,14 @@ PRINTER_SERVICE_URL = os.environ.get("PRINTER_SERVICE_URL", "http://printer-serv
 @app.route("/", methods=["GET"])
 def index():
     return """
-    <h2>Upload foto</h2>
+    <h2>Upload photos</h2>
     <form action="/upload" method="post" enctype="multipart/form-data">
         <input type="file" name="file" multiple>
         <select name="mode">
-            <option value="single">Singola foto</option>
+            <option value="single">Single photo</option>
             <option value="collage">Collage 2x2</option>
         </select>
-        <input type="submit" value="Invia">
+          <input type="submit" value="Send">
     </form>
     """
 
@@ -159,9 +159,9 @@ def upload():
         for f in saved_files:
             requests.post(f"{PRINTER_SERVICE_URL}/print", files={"file": open(f,"rb")})
     else:
-        # Invia a collage builder
+        # Send to collage builder
         r = requests.post(f"{COLLAGE_BUILDER_URL}/build", files=[("files", open(f,"rb")) for f in saved_files])
-        # Poi invia output collage a printer
+        # Then send collage output to printer
         output_file = r.json()["collage"]
         with open(output_file, "rb") as f:
             requests.post(f"{PRINTER_SERVICE_URL}/print", files={"file": f})
@@ -174,13 +174,11 @@ if __name__ == "__main__":
 
 ---
 
-Con questa struttura hai:
+With this structure you get:
 
-* **Scalabilità**: puoi aggiornare o sostituire un container senza toccare gli altri.
-* **Flessibilità**: singola foto o collage.
-* **Sicurezza**: puoi esporre solo frontend tramite Cloudflare Tunnel o proxy HTTPS, mentre backend resta interno.
-* **Stampa automatica**: tramite mail-to-print, senza installare driver sul VPS.
+* **Scalability**: update or replace one container without touching the others.
+* **Flexibility**: single photo or collage.
+* **Security**: you can expose only the frontend via Cloudflare Tunnel or HTTPS proxy, while the backend remains internal.
+* **Automatic printing**: via mail-to-print, without installing drivers on the VPS.
 
 ---
-
-Se vuoi, posso scrivere **la versione completa del collage-builder** con gestione ICC integrata, margini configurabili e rotazione automatica, pronta da mettere in questo stack. Vuoi che faccia anche quello?

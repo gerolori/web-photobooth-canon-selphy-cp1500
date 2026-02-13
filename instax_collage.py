@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 instax_collage_auto.py
-Collage 2x2 per Canon Selphy (10x14.8 cm nominali)
-- Risoluzione fissa 1847x1247 px
-- Bordo esterno 2mm, bordo centrale 4mm
-- Rotazione automatica delle foto orizzontali
-- ICC sempre applicato
-- Correzione verde (%)
-- Offset regolabili per calibrazione (top, bottom, left, right)
+2x2 collage for Canon Selphy (10x14.8 cm nominal)
+- Fixed resolution 1847x1247 px
+- Outer border 2mm, center border 4mm
+- Auto-rotate landscape photos
+- ICC always applied
+- Green correction (%)
+- Adjustable offsets for calibration (top, bottom, left, right)
 """
 
 import os
@@ -25,7 +25,7 @@ BORDER_CENTER_MM = 4
 # GREEN_FACTOR = 0.97
 # ICC_PATH = "Canon_CP1500.icc"
 
-# === Correzioni regolabili per calibrazione margini ===
+# === Adjustable corrections for margin calibration ===
 CORR_TOP_MM = -0.5
 CORR_BOTTOM_MM = -0.5
 CORR_LEFT_MM = 1.5
@@ -45,7 +45,7 @@ def mm_to_px(mm):
 #     return Image.merge("RGB", (r, g, b))
 
 def build_collage(imgs, output_path):
-    # Conversione bordi e correzioni in pixel
+    # Convert borders and corrections to pixels
     outer_px = mm_to_px(BORDER_OUTER_MM)
     center_px = mm_to_px(BORDER_CENTER_MM)
     corr_top = mm_to_px(CORR_TOP_MM)
@@ -53,7 +53,7 @@ def build_collage(imgs, output_path):
     corr_left = mm_to_px(CORR_LEFT_MM)
     corr_right = mm_to_px(CORR_RIGHT_MM)
 
-    # Dimensione utile
+    # Usable size
     usable_w = COLLAGE_W - 2 * outer_px - center_px - corr_left - corr_right
     usable_h = COLLAGE_H - 2 * outer_px - center_px - corr_top - corr_bottom
 
@@ -71,44 +71,44 @@ def build_collage(imgs, output_path):
 
     for idx, path in enumerate(imgs):
         if not os.path.exists(path):
-            raise FileNotFoundError(f"File non trovato: {path}")
+            raise FileNotFoundError(f"File not found: {path}")
         im = Image.open(path).convert("RGB")
 
-        # Riduzione verde
+        # Green reduction
         # im = reduce_green(im, GREEN_FACTOR)
 
         w, h = im.size
 
-        # Ruota orizzontale
+        # Rotate landscape
         if w < h:
             im = im.rotate(90, expand=True)
             w, h = im.size
 
-        # --- Fit centrato nella cella mantenendo aspect ratio ---
+        # --- Center-fit in the cell while keeping aspect ratio ---
         ratio = w / h
         target_ratio = cell_w / cell_h
 
         if ratio > target_ratio:
-            # immagine più larga → altezza piena
+            # wider image -> full height
             new_h = cell_h
             new_w = int(ratio * new_h)
         else:
-            # immagine più alta → larghezza piena
+            # taller image -> full width
             new_w = cell_w
             new_h = int(new_w / ratio)
 
         resized = im.resize((new_w, new_h), RESAMPLE_LANCZOS)
         resized = resized.filter(ImageFilter.UnsharpMask(radius=1.5, percent=120, threshold=3))
 
-        # Crop centrato
+        # Center crop
         left = (new_w - cell_w) // 2
         top = (new_h - cell_h) // 2
         cropped = resized.crop((left, top, left + cell_w, top + cell_h))
 
-        # Paste nel collage
+        # Paste into collage
         collage.paste(cropped, positions[idx])
 
-    # # Applica ICC
+    # # Apply ICC
     # icc_bytes = None
     # if os.path.exists(ICC_PATH):
     #     try:
@@ -118,11 +118,11 @@ def build_collage(imgs, output_path):
     #         collage = ImageCms.applyTransform(collage, transform)
     #         with open(ICC_PATH, "rb") as f:
     #             icc_bytes = f.read()
-    #         print(f"🎨 Profilo ICC applicato: {ICC_PATH}")
+    #         print(f"ICC profile applied: {ICC_PATH}")
     #     except Exception as e:
-    #         print(f"⚠️ ICC non applicato: {e}")
+    #         print(f"ICC not applied: {e}")
     # else:
-    #     print(f"⚠️ Profilo ICC non trovato: {ICC_PATH}")
+    #     print(f"ICC profile not found: {ICC_PATH}")
 
     collage.save(
     output_path,
@@ -131,12 +131,12 @@ def build_collage(imgs, output_path):
     subsampling=0,
     dpi=(DPI, DPI),
     )
-    print(f"✅ Collage salvato come {output_path} ({COLLAGE_W}×{COLLAGE_H} px)")
+    print(f"Collage saved as {output_path} ({COLLAGE_W}x{COLLAGE_H} px)")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--out", default="collage_calibrato.jpg", help="File di output")
+    parser.add_argument("--out", default="collage_calibrated.jpg", help="Output file")
     args = parser.parse_args()
 
-    imgs = [f"foto/{i}.jpg" for i in range(1, 5)]
+    imgs = [f"photos/{i}.jpg" for i in range(1, 5)]
     build_collage(imgs, args.out)

@@ -1,6 +1,6 @@
 # Instax/Canon CP1500 Photo Booth
 
-Local photo booth app for Canon SELPHY CP1500. It provides a small Flask web UI for uploading photos, builds 2x2 collages, applies a color tweak and ICC profile, queues files for printing, and runs a FIFO print worker.
+Local photo booth app for Canon SELPHY CP1500 only. It provides a small Flask web UI for uploading photos, builds 2x2 collages, applies a color tweak and ICC profile, queues files for printing, and runs a FIFO print worker.
 
 ## What is in this repo
 
@@ -15,7 +15,7 @@ Local photo booth app for Canon SELPHY CP1500. It provides a small Flask web UI 
 
 - Python 3.10+ recommended
 - Windows for printing via win32print (instax_autoprint.py)
-- Canon SELPHY CP1500 driver installed
+- Canon SELPHY CP1500 driver installed (this project targets CP1500 only)
 - Optional: cloudflared in PATH if you want a tunnel
 
 ## Quick start
@@ -59,6 +59,8 @@ Open http://localhost:5000 in your browser.
 
 app.py will attempt to start cloudflared automatically. It passes --url http://localhost:5000 and, if set, --hostname from .env. If you do not want a tunnel, leave the env var empty and do not install cloudflared.
 
+Do not expose this app to the public internet. It is not security hardened and has no real authentication. ⚠️ If you must expose it temporarily, restrict access (for example, a geolocation allowlist in Cloudflare), and keep the exposure window as short as possible.
+
 ## Security notes
 
 - The upload PIN is hardcoded in app.py and in the client-side templates. Treat it as public. If you need a real access control, move it to server-side env config and remove it from the UI. ⚠️
@@ -80,8 +82,15 @@ The photo folder structure is tracked, but all files inside are ignored. The .gi
 - If prints do not start, confirm the printer name matches your Windows printer.
 - If images look off, verify Canon_CP1500.icc exists and is readable.
 
-## Future changes: 
+## Path to system-independent and Docker-ready
 
-I'd like this to be system independent (so support for both mac and linux).
+This is the list to reach cross-platform support and Dockerization (mind you, keeping CP1500 as the only supported printer).
 
-I want also to explore dockerization of this but one challange is that USB passthrough is impossible with Docker, so print over IP is probably the only way, so this probably needs a small client side program to bridge between a host and that.
+- Extract printing into a backend interface (Windows: pywin32, Linux/macOS: CUPS/IPP).
+- Add a CUPS-based backend for Linux/macOS and choose backend by OS (with an env override).
+- Move printer name and backend settings to env (for example PRINTER_NAME, PRINTER_BACKEND, CUPS_SERVER).
+- Update the worker to run on Linux/macOS without Windows-only imports.
+- Ensure Pillow has ICC support in all environments (ImageCms + lcms) and include Canon_CP1500.icc.
+- For Docker: mount the photo/ volume and keep the worker in a separate container or on the host.
+- USB passthrough is unreliable in Docker. Plan to use the CP1500 as a network printer (IPP) and print via CUPS from the host or a container with access to the host CUPS socket.
+- Document host setup for each OS (installing the CP1500 as a network printer, verifying queue name, and test-printing).

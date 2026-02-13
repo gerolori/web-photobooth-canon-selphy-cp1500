@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Stampa Festa Anita</title>
+<title>Photo Booth Print</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/heic-to@1.3.0/dist/iife/heic-to.js"></script>
 
@@ -27,52 +27,52 @@
     </a>
     <a href="/postcard" class="px-3 py-1 font-medium transition 
        {{ 'bg-blue-600 text-white' if current_path == '/postcard' else 'text-gray-600 hover:bg-gray-300' }}">
-       Cartoline
+       Postcards
     </a>
   </div>
-  <h1 class="text-3xl font-bold text-gray-800">Carica le tue cartoline!</h1>
+  <h1 class="text-3xl font-bold text-gray-800">Upload your postcards!</h1>
 </header>
 
 <main class="w-full max-w-md space-y-6">
   <div id="counters" class="text-xs sm:text-sm text-gray-600 flex justify-center flex-wrap gap-3 mt-3 mb-4">
-    <span>🕓 In coda: <strong id="to-print">0</strong></span>
-    <span>🖨️ Stampate: <strong id="total-prints">0</strong></span>
+    <span>🕓 Queued: <strong id="to-print">0</strong></span>
+    <span>🖨️ Printed: <strong id="total-prints">0</strong></span>
   </div>
 
   <form id="upload-form" class="flex flex-col items-center bg-white shadow-lg rounded-xl p-5 space-y-4 relative">
     <label class="relative border-2 border-dashed border-gray-300 rounded-xl w-full flex flex-col items-center justify-center py-12 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition">
       <input type="file" name="photo" accept=".heic,.heif,image/*" multiple
         class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-      <span class="text-gray-600 text-center">Trascina qui le cartoline o clicca per caricare</span>
+      <span class="text-gray-600 text-center">Drag postcards here or click to upload</span>
     </label>
-    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Stampa</button>
+    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Print</button>
   </form>
 
   <div id="preview" class="grid gap-4 w-full grid-cols-2"></div>
 </main>
 
-<!-- Modale notifica -->
+<!-- Notification modal -->
 <div id="modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center">
   <div class="bg-white rounded-xl shadow-lg p-6 text-center w-80">
-    <h2 class="text-lg font-semibold text-gray-800 mb-2" id="modal-title">Notifica</h2>
+    <h2 class="text-lg font-semibold text-gray-800 mb-2" id="modal-title">Notification</h2>
     <p class="text-gray-600 mb-4" id="modal-message"></p>
     <button onclick="closeModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">OK</button>
   </div>
 </div>
 
-<!-- Modale caricamento -->
+<!-- Loading modal -->
 <div id="loading-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center">
   <div class="bg-white rounded-xl shadow-lg p-6 text-center w-60">
     <div class="animate-spin border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 mx-auto mb-4"></div>
-    <p class="text-gray-700">Caricamento in corso...</p>
+    <p class="text-gray-700">Uploading...</p>
   </div>
 </div>
 
-<!-- Modale conversione HEIC -->
+<!-- HEIC conversion modal -->
 <div id="heic-loading-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center">
   <div class="bg-white rounded-xl shadow-lg p-6 text-center w-60">
     <div class="animate-spin border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 mx-auto mb-4"></div>
-    <p class="text-gray-700">Conversione foto iPhone in corso...</p>
+    <p class="text-gray-700">Converting iPhone photos...</p>
   </div>
 </div>
 
@@ -112,7 +112,7 @@ fileInput.addEventListener("change", async () => {
           processedFiles = [new File([jpgBlob], file.name.replace(/\.(heic|HEIC|heif|HEIF)$/, ".jpg"), { type: "image/jpeg" })];
         }
       } catch (err) {
-        console.error("Errore convertendo HEIC:", err);
+        console.error("Error converting HEIC:", err);
         continue;
       } finally {
         hideHeicLoading();
@@ -168,10 +168,10 @@ function updatePreview() {
 
 document.getElementById("upload-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  if(fileList.length===0){showModal("Attenzione","Nessuna cartolina selezionata!");return;}
+  if(fileList.length===0){showModal("Warning","No postcards selected!");return;}
 
-  const pin = prompt("Inserisci PIN per confermare l'upload:");
-  if(pin!==HARD_CODED_PIN){showModal("Errore PIN","❌ PIN errato!");return;}
+  const pin = prompt("Enter PIN to confirm upload:");
+  if(pin!==HARD_CODED_PIN){showModal("PIN Error","❌ Wrong PIN!");return;}
 
   const formData = new FormData();
   fileList.forEach(item=>{for(let i=0;i<item.copies;i++){formData.append("photo",item.file,item.file.name);}});
@@ -180,14 +180,14 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
   showLoading();
   try{
     const res = await fetch("/upload_postcard",{method:"POST",body:formData});
-    const data = await res.json().catch(()=>({error:"Errore durante il caricamento"}));
-    if(res.ok){showModal("Fatto!","✅ Cartoline caricate e inviate alla stampa!"); fileList=[]; updatePreview();}
-    else{showModal("Errore","❌ "+(data.error||"Errore durante il caricamento"));}
-  }catch{showModal("Errore","❌ Errore di connessione al server.");}
+    const data = await res.json().catch(()=>({error:"Upload error"}));
+    if(res.ok){showModal("Done!","✅ Postcards uploaded and sent to print!"); fileList=[]; updatePreview();}
+    else{showModal("Error","❌ "+(data.error||"Upload error"));}
+  }catch{showModal("Error","❌ Server connection error.");}
   finally{hideLoading();}
 });
 
-// Contatori
+// Counters
 async function refreshCounters() {
   try{
     const res=await fetch("/counters"); const data=await res.json();
