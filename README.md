@@ -4,16 +4,15 @@ Local photo booth app for Canon SELPHY CP1500 only. It provides a Flask web UI f
 
 This repo is a refactor focused on clearer structure and centralized configuration. It still targets the CP1500 only.
 
-## Repo structure
-
-- backend/app.py: Flask server, upload endpoints, collage watcher, Cloudflare Tunnel launch.
-- backend/collage.py: collage builder and layout rules.
-- backend/color.py: ICC-based correction pipeline.
-- backend/config.py: shared constants derived from config.yaml.
-- backend/printer.py: local Windows printer integration.
-- config.yaml: runtime configuration (paths, collage sizing, ICC, PIN).
-- templates/: UI pages (collage upload, postcards, correction status).
-- photo/: local storage and print queues (content ignored by git, structure kept).
+## Directory Structure
+- **backend/app.py**: Flask server with endpoints for uploads, collage watcher, and Cloudflare Tunnel launch.
+- **backend/collage.py**: Handles collage building and layout rules.
+- **backend/color.py**: Manages ICC-based color correction pipeline.
+- **backend/config.py**: Contains shared constants derived from config.yaml.
+- **backend/printer.py**: Integrates with local Windows printer using pywin32.
+- **config.yaml**: Stores runtime configuration including paths, collage sizing, ICC settings, and PIN.
+- **templates/**: UI pages for collage upload, postcards, and correction status.
+- **photo/**: Local storage and print queues (content ignored by git; structure kept).
 
 ## Requirements
 
